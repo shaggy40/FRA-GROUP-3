@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRA Group Project 2 | Credit Risk Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #21262d;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --text2: #8b949e;
+  --hdfc: #3b82f6;
+  --hdfc-light: #60a5fa;
+  --bajaj: #f59e0b;
+  --bajaj-light: #fbbf24;
+  --icici: #ef4444;
+  --axis: #22c55e;
+  --kotak: #a855f7;
+  --nbfc: #64748b;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;}
+
+/* HEADER */
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:18px 28px;position:sticky;top:0;z-index:100;}
+.header-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.header h1{font-size:17px;font-weight:600;color:#f0f6fc;}
+.header p{font-size:11px;color:var(--text2);margin-top:2px;}
+.kpi-pills{display:flex;gap:8px;flex-wrap:wrap;}
+.kpi-pill{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;display:flex;gap:5px;align-items:center;}
+.kpi-pill .lbl{color:var(--text2);}
+.kpi-pill .val{font-weight:600;}
+.c-hdfc{color:var(--hdfc-light);}
+.c-bajaj{color:var(--bajaj-light);}
+
+/* NAV */
+.nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;overflow-x:auto;}
+.nb{padding:11px 16px;border:none;background:none;color:var(--text2);cursor:pointer;font-size:12.5px;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+.nb:hover{color:var(--text);}
+.nb.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+/* MAIN */
+.main{max-width:1300px;margin:0 auto;padding:28px;}
+.section{display:none;}
+.section.active{display:block;}
+.sec-title{font-size:19px;font-weight:600;color:#f0f6fc;margin-bottom:6px;}
+.sec-sub{font-size:12px;color:var(--text2);margin-bottom:22px;}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:18px;margin-bottom:22px;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;}
+.card h3{font-size:13px;font-weight:600;margin-bottom:12px;}
+.card-h{border-top:3px solid var(--hdfc);}
+.card-b{border-top:3px solid var(--bajaj);}
+
+/* METRIC ROWS */
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--bg3);}
+.mrow:last-child{border-bottom:none;}
+.mrow .ml{color:var(--text2);font-size:12px;}
+.mrow .mv{font-weight:600;font-size:12px;}
+.good{color:var(--green);}
+.warn{color:var(--yellow);}
+.bad{color:var(--red);}
+
+/* CHARTS */
+.chart-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:22px;}
+.chart-wrap h3{font-size:13px;font-weight:600;margin-bottom:4px;color:#f0f6fc;}
+.chart-desc{font-size:12px;color:var(--text2);margin-bottom:14px;}
+.chart-box{position:relative;}
+
+/* RISK DRIVER — EVENT CARDS */
+.ev-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:28px;}
+.ev-header{padding:18px 22px;border-bottom:1px solid var(--border);}
+.ev-meta{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.ev-period{font-size:11px;color:var(--accent);font-weight:600;letter-spacing:.3px;}
+.ev-sev{font-size:10px;padding:3px 10px;border-radius:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.sev-critical{background:rgba(248,81,73,.2);color:#f85149;border:1px solid rgba(248,81,73,.4);}
+.sev-high{background:rgba(249,115,22,.2);color:#f97316;border:1px solid rgba(249,115,22,.4);}
+.sev-med{background:rgba(210,153,34,.2);color:#d29922;border:1px solid rgba(210,153,34,.4);}
+.sev-low{background:rgba(63,185,80,.2);color:#3fb950;border:1px solid rgba(63,185,80,.4);}
+.ev-title{font-size:20px;font-weight:700;color:#f0f6fc;margin-bottom:7px;line-height:1.3;}
+.ev-desc{font-size:12.5px;color:var(--text2);line-height:1.65;max-width:820px;}
+.ev-focus-row{font-size:11px;color:var(--text2);padding:8px 22px;background:var(--bg3);border-bottom:1px solid var(--border);}
+.ev-focus-row span{color:var(--accent);font-weight:600;}
+.entity-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0;background:var(--border);}
+.en-card{background:var(--bg2);padding:18px;position:relative;}
+.en-card.en-selected{background:#1a2130;}
+.en-name-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+.en-name{font-size:14px;font-weight:700;color:#f0f6fc;}
+.en-ticker{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700;}
+.tk-h{background:rgba(59,130,246,.2);color:#60a5fa;}
+.tk-b{background:rgba(245,158,11,.2);color:#fbbf24;}
+.tk-i{background:rgba(239,68,68,.2);color:#f87171;}
+.tk-c{background:rgba(168,85,247,.2);color:#c084fc;}
+.en-role{font-size:10px;color:var(--text2);margin-bottom:12px;}
+.en-rating{position:absolute;top:16px;right:16px;font-size:10px;padding:3px 9px;border-radius:10px;font-weight:700;text-transform:uppercase;}
+.er-vulnerable{background:rgba(248,81,73,.2);color:#f85149;border:1px solid rgba(248,81,73,.35);}
+.er-high{background:rgba(249,115,22,.2);color:#f97316;border:1px solid rgba(249,115,22,.35);}
+.er-medium{background:rgba(210,153,34,.2);color:#d29922;border:1px solid rgba(210,153,34,.35);}
+.er-low{background:rgba(63,185,80,.2);color:#3fb950;border:1px solid rgba(63,185,80,.35);}
+.er-minimal{background:rgba(99,110,123,.15);color:#8b949e;border:1px solid rgba(99,110,123,.3);}
+.imp-block{margin-bottom:11px;}
+.imp-label-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+.imp-name{font-size:11px;color:var(--text2);}
+.imp-val{font-size:11px;font-weight:700;color:var(--text);}
+.imp-bar{height:6px;border-radius:3px;background:var(--bg3);}
+.imp-fill{height:100%;border-radius:3px;}
+.f-green{background:#3fb950;}
+.f-yellow{background:#d29922;}
+.f-orange{background:#f97316;}
+.f-red{background:#f85149;}
+.en-flow{font-size:11px;color:var(--text2);margin:10px 0 8px;}
+.en-flow strong{color:var(--text);}
+.en-analysis{font-size:12px;color:var(--text2);line-height:1.6;padding-top:10px;border-top:1px solid var(--border);}
+.ev-takeaway{background:rgba(88,166,255,.05);border-top:1px solid var(--border);padding:14px 22px;display:flex;gap:10px;align-items:flex-start;}
+.ev-takeaway-icon{font-size:15px;flex-shrink:0;margin-top:1px;}
+.ev-takeaway-text{font-size:12px;color:var(--text2);line-height:1.6;}
+.ev-takeaway-text strong{color:var(--text);}
+
+/* RISK DRIVER HEATMAP */
+.rd-heatmap{border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px;}
+.rd-hm-row{display:grid;grid-template-columns:220px 1fr 1fr 2fr;gap:0;border-bottom:1px solid var(--border);}
+.rd-hm-row:last-child{border-bottom:none;}
+.rd-hm-row.rd-hm-header{background:var(--bg3);font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;}
+.rd-hm-driver,.rd-hm-entity,.rd-hm-insight{padding:11px 14px;border-right:1px solid var(--border);}
+.rd-hm-driver{color:var(--text);font-weight:500;display:flex;align-items:center;gap:8px;}
+.rd-hm-entity{display:flex;flex-direction:column;gap:4px;}
+.rd-hm-insight{color:var(--text2);font-size:11px;line-height:1.5;border-right:none;}
+.rd-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--bg3);font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0;}
+.rd-pill{font-size:10px;padding:2px 9px;border-radius:10px;font-weight:700;text-transform:uppercase;display:inline-block;}
+.rd-low{background:rgba(63,185,80,.2);color:#3fb950;border:1px solid rgba(63,185,80,.4);}
+.rd-mod{background:rgba(210,153,34,.2);color:#d29922;border:1px solid rgba(210,153,34,.4);}
+.rd-high{background:rgba(249,115,22,.2);color:#f97316;border:1px solid rgba(249,115,22,.4);}
+.rd-pval{font-size:10px;color:var(--text2);}
+@media(max-width:900px){.rd-hm-row{grid-template-columns:1fr 1fr;}.rd-hm-insight{display:none;}}
+
+/* GRIDS */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;}
+@media(max-width:760px){.two-col{grid-template-columns:1fr;}}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px;}
+.tbl th{background:var(--bg3);padding:9px 12px;text-align:left;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--bg3);}
+.tbl tr:hover td{background:rgba(255,255,255,.025);}
+.tw{overflow-x:auto;}
+
+/* TIMELINE */
+.tl-item{display:flex;gap:14px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;}
+.tl-year{min-width:55px;font-weight:700;font-size:12px;color:var(--accent);}
+.tl-body h4{font-size:12.5px;font-weight:600;margin-bottom:5px;}
+.tl-body p{font-size:12px;color:var(--text2);}
+.badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;margin:0 4px 4px 0;}
+.badge-sys{background:rgba(220,38,38,.12);color:#f87171;border:1px solid rgba(220,38,38,.25);}
+.badge-idh{background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);}
+.badge-idb{background:rgba(245,158,11,.12);color:#fbbf24;border:1px solid rgba(245,158,11,.25);}
+
+/* INFO BOXES */
+.info-box{background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.18);border-radius:8px;padding:12px 16px;margin-bottom:18px;font-size:12.5px;}
+.info-box strong{color:var(--accent);}
+.warn-box{background:rgba(210,153,34,.07);border:1px solid rgba(210,153,34,.2);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:11px;color:var(--yellow);}
+
+/* PEER TAGS */
+.pt{display:inline-block;padding:3px 10px;border-radius:4px;font-size:11px;font-weight:600;margin:2px;}
+.pt-h{background:rgba(59,130,246,.18);color:var(--hdfc-light);}
+.pt-b{background:rgba(245,158,11,.18);color:var(--bajaj-light);}
+
+/* PULLQUOTE */
+.pq{border-left:3px solid var(--accent);padding:10px 14px;background:rgba(88,166,255,.05);border-radius:0 6px 6px 0;margin:12px 0;font-size:12px;color:var(--text);}
+
+/* SOURCE NOTES */
+.sn{font-size:10.5px;color:var(--text2);font-style:italic;margin-top:8px;}
+
+/* SUMMARY GRID */
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;}
+@media(max-width:800px){.sum-grid{grid-template-columns:repeat(2,1fr);}}
+.sum-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 12px;text-align:center;}
+.sum-card .num{font-size:22px;font-weight:700;margin:4px 0 2px;}
+.sum-card .label{font-size:10px;color:var(--text2);}
+.sum-card .ent{font-size:10px;font-weight:600;margin-top:4px;}
+
+hr.div{border:none;border-top:1px solid var(--border);margin:28px 0;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-row">
+    <div>
+      <h1>FRA Group Project 2 — Credit Risk Dashboard</h1>
+      <p>HDFC Bank &amp; Bajaj Finance &nbsp;|&nbsp; FY2015–FY2024 &nbsp;|&nbsp; Peer-Benchmarked Credit Risk Analysis</p>
+    </div>
+    <div class="kpi-pills">
+      <div class="kpi-pill"><span class="lbl">HDFC GNPA (FY24)</span><span class="val c-hdfc">1.24%</span></div>
+      <div class="kpi-pill"><span class="lbl">HDFC PCR (FY24)</span><span class="val c-hdfc">74%</span></div>
+      <div class="kpi-pill"><span class="lbl">BAF GNPA (FY24)</span><span class="val c-bajaj">0.85%</span></div>
+      <div class="kpi-pill"><span class="lbl">BAF Credit Cost (FY24)</span><span class="val c-bajaj">~1.6%</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- NAVIGATION -->
+<div class="nav">
+  <button class="nb active" onclick="show('overview',this)">Overview</button>
+  <button class="nb" onclick="show('hdfc',this)">HDFC Bank</button>
+  <button class="nb" onclick="show('bajaj',this)">Bajaj Finance</button>
+  <button class="nb" onclick="show('risk',this)">Risk Events</button>
+  <button class="nb" onclick="show('share',this)">Share Price</button>
+  <button class="nb" onclick="show('riskdrivers',this)">Risk Drivers</button>
+  <button class="nb" onclick="show('notes',this)">Data Notes</button>
+</div>
+
+<div class="main">
+
+<!-- ===== OVERVIEW ===== -->
+<section id="overview" class="section active">
+  <div class="sec-title">Entity Overview &amp; Peer Selection</div>
+  <div class="sec-sub">Why these two entities, what their peer sets are, and how they compare at a glance.</div>
+
+  <!-- Team Members Card -->
+  <div class="card" style="margin-bottom:18px;background:linear-gradient(135deg,rgba(29,78,216,0.08) 0%,rgba(30,64,175,0.04) 100%);border:1px solid rgba(59,130,246,0.25);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <span style="font-size:15px;font-weight:700;color:var(--hdfc-light);letter-spacing:.04em;">FRA GROUP 3</span>
+      <span style="font-size:11px;color:var(--text2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;">Group Project 2</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(59,130,246,0.15);">
+        <span style="font-size:10px;color:var(--text2);min-width:64px;">P2513031</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text1);">Kumari Komal</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(59,130,246,0.15);">
+        <span style="font-size:10px;color:var(--text2);min-width:64px;">P2513046</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text1);">Prakhar Agarwal</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(59,130,246,0.15);">
+        <span style="font-size:10px;color:var(--text2);min-width:64px;">P2514053</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text1);">Rishi Mehariya</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(59,130,246,0.15);">
+        <span style="font-size:10px;color:var(--text2);min-width:64px;">P2514059</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text1);">Shagun Khedia</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid rgba(59,130,246,0.15);">
+        <span style="font-size:10px;color:var(--text2);min-width:64px;">P2514072</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text1);">Umang Parakh</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card card-h">
+      <h3 style="color:var(--hdfc-light);">HDFC Bank Ltd</h3>
+      <div class="mrow"><span class="ml">Category</span><span class="mv">(a) Large Private Sector Bank</span></div>
+      <div class="mrow"><span class="ml">Analysis Window</span><span class="mv">FY2015 – FY2024 (10 years)</span></div>
+      <div class="mrow"><span class="ml">Scale — FY24 Advances</span><span class="mv">₹25.7 lakh crore</span></div>
+      <div class="mrow"><span class="ml">Listed Since</span><span class="mv">1995 (NSE / BSE)</span></div>
+      <div class="mrow"><span class="ml">Key Data Break</span><span class="mv warn">HDFC Ltd Merger — July 2023</span></div>
+      <p style="font-size:12px;color:var(--text2);margin-top:10px;">India's largest private sector bank. Consistently best asset quality among large private banks — an ideal anchor for peer comparison across a full 10-year cycle including demonetisation, IL&FS, and COVID.</p>
+    </div>
+    <div class="card card-b">
+      <h3 style="color:var(--bajaj-light);">Bajaj Finance Ltd (BAF)</h3>
+      <div class="mrow"><span class="ml">Category</span><span class="mv">(d) NBFC — Lending Business</span></div>
+      <div class="mrow"><span class="ml">Analysis Window</span><span class="mv">FY2016 – FY2024 (9 years)</span></div>
+      <div class="mrow"><span class="ml">Scale — FY24 AUM</span><span class="mv">₹3.3 lakh crore</span></div>
+      <div class="mrow"><span class="ml">Lending Focus</span><span class="mv">Consumer, B2B, SME, Rural</span></div>
+      <div class="mrow"><span class="ml">Key Data Break</span><span class="mv warn">Model change — 2010 (name change)</span></div>
+      <p style="font-size:12px;color:var(--text2);margin-top:10px;">India's largest retail NBFC. Pivoted from 2-wheeler finance to diversified consumer lending. Provides a sharp contrast to HDFC Bank — same macro risks, structurally different credit profile (unsecured, higher CC).</p>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <strong>Why this combination?</strong>&nbsp; The assignment prohibits combining options (a) and (b). We chose one large private bank (HDFC Bank, option a) and India's largest retail NBFC (Bajaj Finance, option d). This pairing makes the analysis analytically rich: the same macro shocks — COVID, IL&FS, demonetisation — hit both, but their funding structure (deposits vs market borrowings) and loan book (secured retail + corporate vs unsecured consumer) create meaningfully different NPA dynamics and market reactions.
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <h3>HDFC Bank — Peer Set</h3>
+      <div style="margin:8px 0 10px;"><span class="pt pt-h">ICICI Bank</span><span class="pt pt-h">Axis Bank</span><span class="pt pt-h">Kotak Mahindra Bank</span></div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">These three constitute India's other large private sector banks — comparable business model (retail + corporate), same regulatory framework, same RBI supervision tier. Together with HDFC Bank, they form the "Big Four" of Indian private banking. PSBs excluded: ownership, government mandates, and capital structure make them structurally incomparable.</p>
+      <div class="mrow"><span class="ml">ICICI Bank</span><span class="mv" style="font-size:11px;text-align:right;max-width:60%;">Most direct competitor; similar corporate + retail mix</span></div>
+      <div class="mrow"><span class="ml">Axis Bank</span><span class="mv" style="font-size:11px;text-align:right;max-width:60%;">Comparable size; went through NPA cycle similar to ICICI</span></div>
+      <div class="mrow"><span class="ml">Kotak Mahindra</span><span class="mv" style="font-size:11px;text-align:right;max-width:60%;">Conservative lender; sets the lower-bound benchmark</span></div>
+    </div>
+    <div class="card">
+      <h3>Bajaj Finance — Peer Set</h3>
+      <div style="margin:8px 0 10px;"><span class="pt pt-b">Shriram Finance</span><span class="pt pt-b">Cholamandalam I&F</span><span class="pt pt-b">NBFC Sector Avg</span></div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px;">Shriram Finance and Cholamandalam are the closest large-NBFC peers: both are diversified retail lending NBFCs with significant consumer/vehicle portfolios. Muthoot Finance excluded — it is primarily gold-loan only (fully secured, fundamentally different NPA dynamics). NBFC sector GNPA average (RBI-reported) overlaid as the systematic benchmark.</p>
+      <div class="mrow"><span class="ml">Shriram Finance</span><span class="mv" style="font-size:11px;text-align:right;max-width:60%;">Commercial vehicle + retail; comparable scale</span></div>
+      <div class="mrow"><span class="ml">Cholamandalam</span><span class="mv" style="font-size:11px;text-align:right;max-width:60%;">Vehicle + home loans; similar growth NBFC profile</span></div>
+      <div class="mrow"><span class="ml">NBFC Sector Avg</span><span class="mv" style="font-size:11px;text-align:right;max-width:60%;">RBI-reported all-NBFC GNPA (systematic backdrop)</span></div>
+    </div>
+  </div>
+
+  <!-- FY24 Snapshot Table -->
+  <div class="chart-wrap">
+    <h3>FY2024 — Asset Quality Snapshot</h3>
+    <div class="chart-desc">Latest available year-end data for both entities and their peer sets.</div>
+    <div class="tw">
+      <table class="tbl">
+        <thead>
+          <tr><th>Entity</th><th>GNPA Ratio</th><th>NNPA Ratio</th><th>PCR (Specific)</th><th>Credit Cost</th><th>Category</th></tr>
+        </thead>
+        <tbody>
+          <tr><td style="color:var(--hdfc-light);font-weight:600;">HDFC Bank ⚑</td><td class="warn">1.24%</td><td class="good">0.33%</td><td class="good">74%</td><td class="good">~0.42%*</td><td>Large Pvt Bank</td></tr>
+          <tr><td>ICICI Bank</td><td class="warn">2.30%</td><td class="good">0.44%</td><td class="good">~81%</td><td class="good">~0.4%</td><td>Large Pvt Bank</td></tr>
+          <tr><td>Axis Bank</td><td class="warn">1.50%</td><td class="good">0.31%</td><td class="good">~79%</td><td class="good">~0.5%</td><td>Large Pvt Bank</td></tr>
+          <tr><td>Kotak Mahindra Bank</td><td class="good">1.40%</td><td class="good">0.34%</td><td class="good">~76%</td><td class="good">~0.4%</td><td>Large Pvt Bank</td></tr>
+          <tr style="border-top:2px solid var(--border);"><td style="color:var(--bajaj-light);font-weight:600;">Bajaj Finance</td><td class="good">0.85%</td><td class="good">0.37%</td><td>~56%†</td><td class="warn">~1.6%</td><td>NBFC</td></tr>
+          <tr><td>NBFC Sector Avg</td><td class="bad">3.40%</td><td class="warn">1.10%</td><td>—</td><td>—</td><td>NBFC Sector</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sn">Sources: HDFC Bank FY24 MD&A; Equitymaster FY24 analysis; ICICI Bank FY24 Annual Report; Bajaj Finance Q4 FY24 Earnings Call; CARE Ratings Asset Quality Q2FY25.<br>
+    ⚑ HDFC Bank FY24 includes merged HDFC Ltd entity (effective July 1, 2023). * Q4 FY24 annualised credit cost figure. † BAF PCR proxy = 1−(NNPA/GNPA); not directly comparable to bank PCR.</p>
+  </div>
+</section>
+
+
+<!-- ===== HDFC BANK ===== -->
+<section id="hdfc" class="section">
+  <div class="sec-title">HDFC Bank — 10-Year Credit Risk Analysis</div>
+  <div class="sec-sub">FY2015 to FY2024 &nbsp;|&nbsp; Peers: ICICI Bank, Axis Bank, Kotak Mahindra Bank</div>
+
+  <!-- GNPA chart -->
+  <div class="chart-wrap">
+    <h3>Gross NPA Ratio — HDFC Bank vs Peers (FY2015–FY2024)</h3>
+    <div class="chart-desc">HDFC Bank maintained best-in-class asset quality throughout. ICICI and Axis went through a severe corporate NPA cycle (FY2016–FY2019) — GNPA peaked at 8.84% and 6.77% respectively — while HDFC Bank peaked at only 1.4% (FY2019).</div>
+    <div class="chart-box"><canvas id="hdfcGNPA" style="height:280px;"></canvas></div>
+    <p class="sn">Sources: HDFC Bank Annual Reports; Equitymaster FY22/FY23/FY24 analyses (confirmed: FY22 1.17%, FY23 1.12%, FY24 1.24%); ICICI Bank Annual Reports; RBI Banking Supervision Reports.<br>⚑ FY24 HDFC Bank includes post-merger HDFC Ltd entity.</p>
+  </div>
+
+  <!-- NNPA + PCR -->
+  <div class="two-col">
+    <div class="chart-wrap" style="margin-bottom:0;">
+      <h3>Net NPA Ratio — HDFC Bank (FY2015–FY2024)</h3>
+      <div class="chart-desc">Consistently below 0.4% — reflects strong provisioning discipline. Slight uptick FY24 due to merger composition.</div>
+      <div class="chart-box"><canvas id="hdfcNNPA" style="height:200px;"></canvas></div>
+      <p class="sn">FY24: 0.33% (HDFC Bank FY24 MD&A, direct). FY23: 0.27% (Equitymaster). FY22: 0.3% (HDFC Bank press release).</p>
+    </div>
+    <div class="chart-wrap" style="margin-bottom:0;">
+      <h3>Provision Coverage Ratio — HDFC Bank (FY2015–FY2024)</h3>
+      <div class="chart-desc">PCR (specific provisions only) steadily improved from ~68% to 74%, signalling increasing provisioning conservatism.</div>
+      <div class="chart-box"><canvas id="hdfcPCR" style="height:200px;"></canvas></div>
+      <p class="sn">FY24: 74% (HDFC Bank FY24 MD&A — "Coverage Ratio based on specific provisions alone excluding write-offs was 74.0 per cent"). Earlier years from HDFC Bank annual reports.</p>
+    </div>
+  </div>
+
+  <!-- Credit Cost -->
+  <div class="chart-wrap" style="margin-top:18px;">
+    <h3>Credit Cost (Annualised) — HDFC Bank (FY2015–FY2024)</h3>
+    <div class="chart-desc">Credit cost = provisions &amp; contingencies / average net advances. Elevated in FY2021 (COVID provisioning). Significantly declined post-FY2022 as asset quality normalised. FY2024 Q4 annualised figure: 0.42%.</div>
+    <div class="chart-box"><canvas id="hdfcCC" style="height:200px;"></canvas></div>
+    <p class="sn">FY24 (Q4 annualised): 0.42% (HDFC Bank Q4FY24 press release). FY23 (Q4 annualised): 0.67% (same source). COVID-period elevation reflects moratorium-linked provisioning under RBI circulars.</p>
+  </div>
+
+  <!-- Slippages & Write-offs table -->
+  <div class="chart-wrap">
+    <h3>Slippage Ratio &amp; Write-offs — HDFC Bank</h3>
+    <div class="chart-desc">Slippage ratio = fresh NPA additions / gross advances. Write-offs reduce GNPA stock but represent fully-provisioned realised losses.</div>
+    <div class="tw">
+      <table class="tbl">
+        <thead><tr><th>Year</th><th>Slippage Ratio (Approx.)</th><th>Write-offs (₹ Cr)</th><th>GNPA Movement</th><th>Key Driver</th></tr></thead>
+        <tbody>
+          <tr><td>FY2020</td><td>~2.0%</td><td>~8,000</td><td>Stable 1.3%</td><td>Retail NPA + pre-COVID stress</td></tr>
+          <tr><td>FY2021</td><td>~2.5%</td><td>~9,000</td><td>Stable 1.3% (moratorium mask)</td><td>COVID moratorium; RBI provisioning requirements</td></tr>
+          <tr><td>FY2022</td><td>~1.3% (Q4 ann.)</td><td>~9,500</td><td>Improving ↓ 1.17%</td><td>Moratorium expiry; collections normalised</td></tr>
+          <tr><td>FY2023</td><td>~1.2%</td><td>~9,000</td><td>Improving ↓ 1.12%</td><td>Broad-based asset quality improvement</td></tr>
+          <tr><td>FY2024</td><td>~1.3%</td><td>~10,200</td><td>Slight uptick ↑ 1.24%</td><td>Merger effect — HDFC Ltd mortgage NPA incorporated</td></tr>
+          <tr><td>FY2025</td><td>~1.1%</td><td><strong>₹11,846 cr</strong></td><td>Improving ↓ 1.33%</td><td>Improving underlying; write-offs elevated post-merger</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sn">FY25 write-offs: ₹11,846 crore (RBI Performance Statistics via Dataful.in, direct source). FY22 Q4 slippage: HDFC Bank Q4FY22 press release ("Slippage Ratio for the quarter annualized was around 1.3%").</p>
+    <div class="pq">The FY23→FY24 GNPA increase (1.12%→1.24%) is partly attributable to the merger — HDFC Ltd's mortgage book, with its different NPA ageing norms for housing loans, was absorbed. On a like-for-like pre-merger book, underlying asset quality was stable.</div>
+  </div>
+
+  <!-- Summary -->
+  <div class="card card-h">
+    <h3 style="color:var(--hdfc-light);">Key Findings — HDFC Bank</h3>
+    <div class="mrow"><span class="ml">Peer-relative asset quality</span><span class="mv good">Best-in-class throughout FY15–FY24</span></div>
+    <div class="mrow"><span class="ml">NPA cycle exposure</span><span class="mv good">Minimal — GNPA never exceeded 1.4% even at peak</span></div>
+    <div class="mrow"><span class="ml">COVID impact</span><span class="mv warn">GNPA stable; credit cost spiked to ~1.0%; PCR held at 70%</span></div>
+    <div class="mrow"><span class="ml">PCR trend</span><span class="mv warn">Non-monotone: peaks 76% (FY23), 74% (FY24). Not steadily improving.</span></div>
+    <div class="mrow"><span class="ml">Post-merger (FY24)</span><span class="mv warn">NIM compressed 4.3%→3.4%; C/D ratio spiked 88x→108x; credit quality intact</span></div>
+    <div class="mrow"><span class="ml">vs ICICI/Axis NPA cycle</span><span class="mv good">HDFC Bank's conservative corporate lending (avoided large infra/power loans) was the decisive differentiator</span></div>
+  </div>
+</section>
+
+
+<!-- ===== BAJAJ FINANCE ===== -->
+<section id="bajaj" class="section">
+  <div class="sec-title">Bajaj Finance — Credit Risk Analysis</div>
+  <div class="sec-sub">FY2016 to FY2024 &nbsp;|&nbsp; vs NBFC Sector Average &nbsp;|&nbsp; Consumer-focused lending NBFC</div>
+
+  <!-- GNPA chart -->
+  <div class="chart-wrap">
+    <h3>Gross NPA Ratio — Bajaj Finance vs NBFC Sector Avg (FY2016–FY2024)</h3>
+    <div class="chart-desc">Bajaj Finance consistently outperforms the NBFC sector on asset quality by a wide margin. GNPA at FY21 year-end (Mar-21) was 1.79%; the actual peak of 2.96% came in Q1 FY22 (Jun-21) after moratorium expiry revealed pent-up stress. Recovery was swift: 1.60% by FY22, 0.94% by FY23, 0.85% (record low) by FY24. FY16–FY18 figures carry a comparability caveat: the overdue recognition norm migrated from 5→4→3 months across those years (see Data Notes).</div>
+    <div class="chart-box"><canvas id="bajajGNPA" style="height:280px;"></canvas></div>
+    <p class="sn">BAF FY24: GNPA 0.85%, NNPA 0.37% (Q4 FY24 Earnings Call, direct). BAF FY23: 0.94% / 0.34% (Bajaj Finance FY23 results). BAF FY22: 1.60% / 0.68% (Bajaj Finance FY22 results). BAF FY21 year-end (Mar-21): 1.79%; Q1 FY22 peak: 2.96% (Bajaj Finance Q1 FY22 results). NBFC sector FY24: 4.0% (RBI FSR, Mar-24). Sep-24 NBFC figure (3.4%) per CARE Ratings Q2FY25 — later date, used for context only.</p>
+  </div>
+
+  <!-- NNPA + CC -->
+  <div class="two-col">
+    <div class="chart-wrap" style="margin-bottom:0;">
+      <h3>Net NPA Ratio — Bajaj Finance (FY2016–FY2024)</h3>
+      <div class="chart-desc">NNPA peaked at ~1.0% during COVID (FY2021). Recovered to 0.37% by FY24 — amongst the lowest in the NBFC industry.</div>
+      <div class="chart-box"><canvas id="bajajNNPA" style="height:200px;"></canvas></div>
+      <p class="sn">FY24 Q4: NNPA 0.37% (Q4 FY24 Earnings Call, direct). FY16 NNPA 0.28% (Quartr Q4FY16 earnings summary, direct).</p>
+    </div>
+    <div class="chart-wrap" style="margin-bottom:0;">
+      <h3>Credit Cost — Bajaj Finance (FY2016–FY2024)</h3>
+      <div class="chart-desc">Structurally higher than banks (normal for unsecured NBFC business). Spiked to ~3.0% in FY2021. Sharply recovered to 1.3% (FY2023), then crept up to ~1.6% in FY2024 as rural B2C stress emerged.</div>
+      <div class="chart-box"><canvas id="bajajCC" style="height:200px;"></canvas></div>
+      <p class="sn">FY23: 1.3%; FY22: 2.4% (both CRISIL Rating Report Nov 2023, direct). FY13–FY19 average ~1.5% (BOBCAPS Research Sep 2023, direct). FY25 Q1: 2.12% (Q1 FY25 Earnings Call, direct).</p>
+    </div>
+  </div>
+
+  <!-- Slippage table -->
+  <div class="chart-wrap" style="margin-top:18px;">
+    <h3>Loan Loss &amp; Slippage Indicators — Bajaj Finance</h3>
+    <div class="chart-desc">BAF reports "Gross Loan Loss to Average AUM" rather than traditional slippage ratio — equivalent in concept to annualised credit cost from slippages.</div>
+    <div class="tw">
+      <table class="tbl">
+        <thead><tr><th>Period</th><th>Gross Loan Loss to AUM</th><th>GNPA</th><th>NNPA</th><th>Key Driver</th></tr></thead>
+        <tbody>
+          <tr><td>FY2016–FY2019 Avg</td><td>~1.5%</td><td>0.7–1.6%</td><td>0.3–0.5%</td><td>Normal consumer credit cycle; diversification ongoing</td></tr>
+          <tr><td>FY2021 (Mar-21 year-end)</td><td>~3.0%</td><td>1.79%</td><td>~0.75%</td><td>Moratorium masked stress; underlying borrower distress building; overdue norm now 3 months</td></tr><tr><td>Q1 FY2022 (Jun-21) — peak</td><td>n/a (Q)</td><td><strong>2.96%</strong></td><td>n/a (Q)</td><td>Moratorium expiry revealed pent-up stress — quarterly GNPA peak in BAF history</td></tr>
+          <tr><td>FY2022</td><td>~2.4%</td><td>1.60%</td><td>0.68%</td><td>Recovery underway; Q1 FY22 was peak, falling sharply through year</td></tr>
+          <tr><td>FY2023</td><td>~1.3%</td><td>0.94%</td><td>0.34%</td><td>Normalization; collection efficiency restored to pre-COVID levels</td></tr>
+          <tr><td>FY2024 (Q4 end)</td><td>~1.6%</td><td><strong>0.85%</strong></td><td><strong>0.37%</strong></td><td>Rural B2C &amp; 2W book emerging stress; overall all-time low GNPA</td></tr>
+          <tr><td>FY2025 Q1</td><td><strong>2.12%</strong></td><td>0.86%</td><td>0.38%</td><td>Rural B2C + 2-wheeler book stress; BAF proactively cutting exposure</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sn">FY25 Q1 loan loss 2.12%: Bajaj Finance Q1 FY25 Earnings Call transcript, direct. FY24 Q4 GNPA/NNPA: Q4 FY24 Earnings Call, direct ("GNPA and NNPA came in at 85 basis points... net NPA came in at 37 basis points"). FY22-FY23 CC: CRISIL Rating Report Nov 2023, direct.</p>
+  </div>
+
+  <!-- Summary -->
+  <div class="card card-b">
+    <h3 style="color:var(--bajaj-light);">Key Findings — Bajaj Finance</h3>
+    <div class="mrow"><span class="ml">vs NBFC sector</span><span class="mv good">Consistently 3–5x better GNPA than sector average throughout the period</span></div>
+    <div class="mrow"><span class="ml">COVID — peak GNPA</span><span class="mv bad">FY21 year-end 1.79%; Q1 FY22 peak 2.96% — moratorium expiry revealed pent-up stress</span></div>
+    <div class="mrow"><span class="ml">Recovery speed</span><span class="mv good">Faster than sector — GNPA back to sub-1% by FY24, lowest ever</span></div>
+    <div class="mrow"><span class="ml">Credit cost vs banks</span><span class="mv warn">Structurally 3–4× higher than HDFC Bank (expected for unsecured consumer NBFC)</span></div>
+    <div class="mrow"><span class="ml">IL&FS impact (FY2019)</span><span class="mv warn">Funding cost pressure; growth slowdown — asset quality held at ~1.4% (resilience)</span></div>
+    <div class="mrow"><span class="ml">Idiosyncratic concern (FY25)</span><span class="mv warn">Rural B2C + 2W book stress; proactive book reduction underway</span></div>
+  </div>
+</section>
+
+
+<!-- ===== RISK EVENTS ===== -->
+<section id="risk" class="section">
+  <div class="sec-title">Systematic vs Idiosyncratic Risk</div>
+  <div class="sec-sub">What was economy-wide vs entity-specific — and what each event did to credit metrics.</div>
+
+  <div class="two-col" style="margin-bottom:16px;">
+    <div class="info-box" style="margin-bottom:0;">
+      <strong>Systematic Risk</strong> = Affects the entire sector simultaneously. Both entities (and peers) show correlated deterioration in NPAs / credit cost. Neither is unique to one lender.
+    </div>
+    <div class="info-box" style="margin-bottom:0;border-color:rgba(217,119,6,.2);background:rgba(217,119,6,.05);">
+      <strong>Idiosyncratic Risk</strong> = Entity-specific. Peers are unaffected or move differently. Traceable to management decisions, product strategy, or regulatory action against one lender.
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2017</div>
+    <div class="tl-body">
+      <h4>Demonetisation — Agriculture &amp; Rural NPA Stress</h4>
+      <span class="badge badge-sys">Systematic</span>
+      <p>November 2016 demonetisation disrupted rural cash flows. HDFC Bank's GNPA crossed 1% for the first time (0.9% → 1.1%). ICICI and Axis faced larger spikes from coinciding corporate loan stress. Bajaj Finance also saw consumer segment pressure, though at smaller scale. No bank escaped — the direction was common, the magnitude differed by portfolio mix.</p>
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2018–19</div>
+    <div class="tl-body">
+      <h4>ICICI / Axis Corporate NPA Cycle — Infra &amp; Power Sector Failures</h4>
+      <span class="badge badge-sys">Systematic (corporate lending)</span>
+      <span class="badge badge-idh">Idiosyncratic advantage: HDFC Bank</span>
+      <p>ICICI Bank GNPA peaked at 8.84% (FY18) and Axis Bank at 6.77% — driven by infrastructure/power/telecom corporate loan slippages. <strong>HDFC Bank peaked at only 1.4% (FY19)</strong>. The divergence is partly systematic (sector had stressed infra loans) but partly idiosyncratic: HDFC Bank deliberately avoided large structured corporate credits that ICICI and Axis had aggressively built. BAF (retail-only book) was untouched by this corporate cycle — confirming the stress was not purely systematic.</p>
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2019</div>
+    <div class="tl-body">
+      <h4>IL&FS Default — NBFC Liquidity Crunch</h4>
+      <span class="badge badge-sys">Systematic (NBFCs)</span>
+      <span class="badge badge-idb">Idiosyncratic sensitivity: Bajaj Finance</span>
+      <p>IL&FS default (Sep 2018) triggered an NBFC-wide liquidity crisis. Mutual funds and banks pulled short-term funding from NBFCs. Bajaj Finance's cost of funds rose sharply; growth slowed in H2 FY19. HDFC Bank (deposit-funded, access to RBI repo) was insulated. BAF's asset quality held (GNPA ~1.4%), demonstrating portfolio strength — but the funding side pressure was real and idiosyncratic to BAF's market-borrowing-dependent model.</p>
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2021</div>
+    <div class="tl-body">
+      <h4>COVID-19 — Pandemic Shock (Moratorium, Provisioning)</h4>
+      <span class="badge badge-sys">Systematic — Both entities impacted</span>
+      <p>RBI granted 6-month moratorium (Mar–Aug 2020). <strong>HDFC Bank:</strong> Reported GNPA was 1.3% (masked by moratorium norms); credit cost spiked to ~1.0% as the bank provisioned preemptively. PCR held at ~70%. <strong>Bajaj Finance:</strong> At the COVID market crash (Mar-20), BAF GNPA stood at 1.61% — stress was latent, not yet visible. As moratorium expired, GNPA rose to 1.79% by FY21 year-end (Mar-21), then peaked at <strong>2.96%</strong> in Q1 FY22 (Jun-21). Credit cost hit ~3.0% of AUM. Note: the equity market priced this in a year before the GNPA data confirmed it — price led the NPA data (see Share Price tab). Direction was systematic; magnitude was driven by book composition.</p>
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2021</div>
+    <div class="tl-body">
+      <h4>RBI Credit Card Embargo — HDFC Bank Specific</h4>
+      <span class="badge badge-idh">Idiosyncratic — HDFC Bank only</span>
+      <p>RBI barred HDFC Bank from issuing new credit cards (Dec 2020–Aug 2021) following repeated IT/digital outages. This was entirely entity-specific — no peer faced this action. ICICI Bank and Axis Bank gained card market share during the embargo period. No direct credit quality impact (NPAs were unaffected), but significant revenue opportunity cost. The market treated it as a governance/operational risk event, not a credit risk event.</p>
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2024</div>
+    <div class="tl-body">
+      <h4>HDFC–HDFC Ltd Merger — Balance Sheet Integration Stress</h4>
+      <span class="badge badge-idh">Idiosyncratic — HDFC Bank only</span>
+      <p>Merger effective July 1, 2023 (Q1 FY24). Advances grew 54.4% to ₹25.7 lakh crore (organic was ~15%); GNPA rose from 1.12% → 1.24% partly due to incorporating HDFC Ltd's mortgage NPA norms. Credit/deposit ratio jumped from 88.3x to 108x, compressing NIMs from ~4.3% to ~3.4%. No peer (ICICI, Axis, Kotak) was affected. This created a data break — FY24 HDFC Bank figures are not directly comparable to FY23.</p>
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2024</div>
+    <div class="tl-body">
+      <h4>RBI eCOM / Insta EMI Lending Ban — Bajaj Finance</h4>
+      <span class="badge badge-idb">Idiosyncratic — Bajaj Finance only</span>
+      <p>November 2023: RBI directed BAF to immediately cease loan sanctions under its high-volume ‘eCOM’ and ‘Insta EMI’ channels for non-compliance with Key Fact Statement (KFS) lending guidelines. These channels accounted for a significant share of BAF’s consumer digital disbursements. Share price fell ~4% intraday on the news, then recovered fully to close +1.9% higher — the market correctly read it as a process/compliance issue rather than a credit quality event. The ban was lifted after BAF addressed the KFS gaps. <strong>No peer (Cholamandalam, Shriram, MuthootFin) faced similar regulatory action</strong> — this is the clearest idiosyncratic regulatory event in BAF’s recent history.</p>
+    </div>
+  </div>
+
+  <div class="tl-item">
+    <div class="tl-year">FY2025</div>
+    <div class="tl-body">
+      <h4>Bajaj Finance Rural B2C &amp; 2-Wheeler Book Stress</h4>
+      <span class="badge badge-idb">Idiosyncratic — Bajaj Finance only</span>
+      <p>BAF's aggressive push into rural B2C lending (FY22–24) began showing elevated delinquencies in FY25. BAF proactively cut this book by ~30%. The 2-wheeler/3-wheeler captive book (&lt;1% AUM) contributed 13% of GNPA in Q4 FY26. Peers with different product mix (Shriram Finance in CV lending, Cholamandalam in vehicle/home) were not impacted in the same way. BAF is managing it out — GNPA already recovering to 1.01% by Q4 FY26.</p>
+    </div>
+  </div>
+
+  <!-- Comparison table -->
+  <div class="chart-wrap" style="margin-top:18px;">
+    <h3>Comparative Risk Summary Table</h3>
+    <div class="tw">
+      <table class="tbl">
+        <thead><tr><th>Risk Event</th><th>Type</th><th>HDFC Bank Impact</th><th>Bajaj Finance Impact</th></tr></thead>
+        <tbody>
+          <tr><td>Demonetisation (FY17)</td><td>Systematic</td><td>GNPA: 0.9% → 1.1%</td><td>Minor (pre-scale)</td></tr>
+          <tr><td>Corporate NPA Cycle (FY18–19)</td><td>Systematic + Idiosyncratic (ICICI/Axis)</td><td>GNPA peaked at 1.4% (contained)</td><td>Unaffected (retail-only book)</td></tr>
+          <tr><td>IL&FS Crisis (FY19)</td><td>Systematic (NBFCs)</td><td>Unaffected (deposit-funded)</td><td>Funding cost ↑; growth slowed</td></tr>
+          <tr><td>COVID-19 (FY21)</td><td>Systematic</td><td>Credit cost ↑ to ~1%; GNPA stable (moratorium)</td><td>GNPA ↑ to 2.96%; CC ↑ to ~3%</td></tr>
+          <tr><td>RBI Credit Card Embargo (FY21)</td><td>Idiosyncratic (HDFC only)</td><td>Revenue loss; regulatory overhang</td><td>Unaffected</td></tr>
+          <tr><td>HDFC Ltd Merger (FY24)</td><td>Idiosyncratic (HDFC only)</td><td>NIM ↓; C/D ↑; balance sheet composition change</td><td>Unaffected</td></tr>
+          <tr><td>RBI eCOM/Insta EMI Ban (Nov-23)</td><td>Idiosyncratic (BAF only)</td><td>Unaffected</td><td>Channels suspended; stock fell ~4% intraday then closed +1.9%; compliance fix resolved it</td></tr>
+          <tr><td>Rural B2C / 2W Stress (FY25)</td><td>Idiosyncratic (BAF only)</td><td>Unaffected</td><td>CC re-elevated; proactive book reduction</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== SHARE PRICE ===== -->
+<section id="share" class="section">
+  <div class="sec-title">Share Price Reaction to Risk Events</div>
+  <div class="sec-sub">How the market priced in systematic and idiosyncratic risks — and whether share prices reflected credit quality signals.</div>
+
+  <div class="info-box"><strong>Methodology:</strong> We examine share price movements around key risk events, comparing each entity's reaction vs its peer set. Peer-divergent moves are attributed to idiosyncratic risk; correlated moves to systematic risk. Approximate % moves based on exchange data and contemporaneous press reporting.</div>
+
+  <!-- SHARE PRICE LINE CHART -->
+  <div class="chart-wrap" style="margin-bottom:22px;">
+    <h3>Share Price — Indexed Total Return Performance (Base 100 = Start of Each Entity's Window)</h3>
+    <div class="chart-desc">Indexed to 100 at each entity's start year (HDFC Bank base = FY15 ₹511; BAF base = FY16 ₹69, fully adjusted for Sept 2016 1:5 split + 1:1 bonus). Index value directly shows cumulative return: 200 = doubled, 500 = 5×. FY24: HDFC Bank = 283 (2.8× return), BAF = 2096 (20× return from FY16). Both coincidentally reached ≈₹1,447 in absolute terms at FY24 — the indexed chart shows the dramatically different journeys.</div>
+    <div class="chart-box"><canvas id="sharePriceChart" style="height:300px;"></canvas></div>
+    <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;">
+      <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;"><span style="display:inline-block;width:14px;height:3px;background:#f85149;border-radius:2px;"></span>⬤ IL&FS shock FY19 / COVID FY20 (key events)</div>
+      <div style="font-size:11px;color:var(--text2);">Index readings at FY24: <strong style="color:var(--bajaj-light);">BAF = 2,096</strong> (20× return from FY16) vs <strong style="color:var(--hdfc-light);">HDFC Bank = 283</strong> (2.8× return from FY15). Both stocks happened to trade at ≈₹1,447 in absolute terms at March 2024 — a coincidence the indexed chart puts in perspective: same price, vastly different journeys.</div>
+    </div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card card-h">
+      <h3 style="color:var(--hdfc-light);">HDFC Bank — Share Price Events</h3>
+
+      <div class="mrow"><span class="ml">COVID Crash (Jan–Mar 2020)</span><span class="mv bad">~–37% peak to trough</span></div>
+      <div class="mrow"><span class="ml">Peer avg decline (same period)</span><span class="mv bad">–45% to –60%</span></div>
+      <p style="font-size:12px;color:var(--text2);margin:8px 0 14px;"><strong style="color:var(--green);">Outperformed peers during crash</strong> — investors viewed HDFC Bank's low NPA, strong PCR, and deposit funding as protection. Systematic risk was real but HDFC Bank suffered less than peers, confirming low-NPA premium was priced in. Systematic direction was correlated; magnitude diverged in HDFC's favour.</p>
+
+      <div class="mrow"><span class="ml">RBI Credit Card Embargo (Dec 2020)</span><span class="mv warn">~–8 to –10% (3 days)</span></div>
+      <div class="mrow"><span class="ml">Peer movement (same period)</span><span class="mv good">Near zero / positive</span></div>
+      <p style="font-size:12px;color:var(--text2);margin:8px 0 14px;"><strong style="color:var(--yellow);">Classic idiosyncratic market reaction</strong> — peers were flat/positive while HDFC Bank fell. Market correctly priced this as an entity-specific regulatory/governance risk. ICICI Bank and Axis Bank actually gained cards market share during the embargo, widening the divergence.</p>
+
+      <div class="mrow"><span class="ml">Post-Merger underperformance (FY24)</span><span class="mv warn">~–15% vs ICICI Bank (relative)</span></div>
+      <p style="font-size:12px;color:var(--text2);margin-top:8px;">NIM compression post-merger triggered P/ABV re-rating (from ~3.5x pre-merger to ~2.3–2.5x). Idiosyncratic event with multi-quarter market impact. ICICI, Axis, and Kotak had no such structural NIM headwind.</p>
+    </div>
+
+    <div class="card card-b">
+      <h3 style="color:var(--bajaj-light);">Bajaj Finance — Share Price Events</h3>
+
+      <div class="mrow"><span class="ml">COVID Crash (Jan–Mar 2020)</span><span class="mv bad">~–53% in March 2020 alone</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank decline (same period)</span><span class="mv warn">~–37%</span></div>
+      <p style="font-size:12px;color:var(--text2);margin:8px 0 14px;"><strong style="color:var(--red);">Price led the NPA data by ~15 months</strong> — BAF fell ~53% in March 2020 when reported GNPA was only 1.61%. The actual GNPA peak (2.96%) did not arrive until Q1 FY22 (June 2021) — a full 15 months later, after moratorium expiry revealed pent-up stress. The market priced in NBFC-specific funding risk (echoing IL&FS anxiety) + unsecured consumer exposure before the asset quality deterioration was visible in reported numbers. Direction correlated; magnitude was idiosyncratic to BAF's risk profile.</p>
+
+      <div class="mrow"><span class="ml">COVID Recovery (Apr 2020–Dec 2021)</span><span class="mv good">~+280% from Mar 2020 lows</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank recovery (same period)</span><span class="mv good">~+90%</span></div>
+      <p style="font-size:12px;color:var(--text2);margin:8px 0 14px;"><strong style="color:var(--green);">BAF recovered far faster</strong> — market priced in rapid credit quality normalization and consumer credit demand recovery. BAF's growth NBFC premium (high AUM growth potential) reasserted itself once systemic risk lifted. This asymmetry (falls more, recovers more) is consistent with higher beta for growth NBFCs.</p>
+
+      <div class="mrow"><span class="ml">FY24–25 Rural B2C / CC concerns</span><span class="mv warn">Underperformed Cholamandalam / Shriram</span></div>
+      <p style="font-size:12px;color:var(--text2);margin-top:8px;">As credit costs re-elevated in FY25 and rural B2C stress emerged, BAF underperformed peers. Cholamandalam and Shriram Finance (less exposed to rural B2C) outperformed — classic idiosyncratic price divergence.</p>
+    </div>
+  </div>
+
+  <!-- Correlation table -->
+  <div class="chart-wrap">
+    <h3>Correlation Summary: NPA Trends vs Share Price Reaction</h3>
+    <div class="tw">
+      <table class="tbl">
+        <thead><tr><th>Observation</th><th>HDFC Bank</th><th>Bajaj Finance</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Systematic risk — price direction vs peers</td>
+            <td>Same direction (fell), smaller magnitude → quality premium priced in</td>
+            <td>Same direction (fell), larger magnitude → NBFC risk premium priced in</td>
+          </tr>
+          <tr>
+            <td>Idiosyncratic risk — diverged from peers?</td>
+            <td>Yes — embargo &amp; merger caused HDFC-only declines; peers unaffected</td>
+            <td>Yes — rural B2C stress caused BAF to underperform Cholamandalam / Shriram</td>
+          </tr>
+          <tr>
+            <td>GNPA rising → share price falling?</td>
+            <td>Weak correlation (GNPA range was narrow 0.9–1.4%); market focused on earnings growth</td>
+            <td>Price led NPA data — stock fell ~53% in Mar-20 when GNPA was 1.61%; peak GNPA of 2.96% came Q1 FY22 (~15 months later after moratorium expiry). Market was forward-looking, not reacting to reported GNPA.</td>
+          </tr>
+          <tr>
+            <td>Market forward-looking on credit quality?</td>
+            <td>Yes — persistent low-NPA premium vs peers reflected in P/ABV premium throughout</td>
+            <td>Yes — post-COVID recovery outpaced fundamental recovery, pricing in future clean-up ahead of actuals</td>
+          </tr>
+          <tr>
+            <td>Overall NPA–Price correlation</td>
+            <td>Negative but mild (small GNPA range meant earnings dominated valuation)</td>
+            <td>Strong negative — large GNPA swings (0.85%↔2.96%) drove material price moves</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pq">
+      <strong>Bottom line:</strong> Systematic risks moved HDFC Bank and BAF in the same direction but of different magnitudes — BAF showed higher beta in both directions (larger fall, faster recovery). Idiosyncratic risks created measurable divergence from peers in both cases. Markets did distinguish between lender-specific and economy-wide credit deterioration, confirming that credit quality metrics (GNPA, credit cost) are priced in — not just directionally, but in proportion to risk magnitude.
+    </div>
+  </div>
+</section>
+
+
+<!-- ===== RISK DRIVERS ===== -->
+<section id="riskdrivers" class="section">
+  <div class="sec-title">Risk Driver Analysis</div>
+  <div class="sec-sub">Six structural risk dimensions assessed for HDFC Bank and Bajaj Finance — current rating, key metrics, and key divergence. FY24 assessment.</div>
+
+  <!-- RISK OVERVIEW HEATMAP -->
+  <div class="chart-wrap" style="margin-bottom:24px;">
+    <h3>Risk Driver Heatmap — HDFC Bank vs Bajaj Finance (FY24)</h3>
+    <div class="rd-heatmap">
+      <div class="rd-hm-row rd-hm-header">
+        <div class="rd-hm-driver">Risk Driver</div>
+        <div class="rd-hm-entity">HDFC Bank</div>
+        <div class="rd-hm-entity">Bajaj Finance</div>
+        <div class="rd-hm-insight">Key Divergence</div>
+      </div>
+      <div class="rd-hm-row">
+        <div class="rd-hm-driver"><span class="rd-num">1</span>Asset Quality</div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-low">Low</span><span class="rd-pval">GNPA 1.24% · CC 0.42%</span></div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-low">Low</span><span class="rd-pval">GNPA 0.85% · CC 1.6%</span></div>
+        <div class="rd-hm-insight">BAF's lower GNPA but higher credit cost — write-off economics of unsecured lending</div>
+      </div>
+      <div class="rd-hm-row">
+        <div class="rd-hm-driver"><span class="rd-num">2</span>Funding &amp; Liquidity</div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-low">Low</span><span class="rd-pval">CASA ~38% · C/D 108%*</span></div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-mod">Moderate</span><span class="rd-pval">Wholesale-funded · CoF 7.9%</span></div>
+        <div class="rd-hm-insight">Deposit franchise (HDFC) vs market borrowings (BAF) — structural 300 bps cost gap</div>
+      </div>
+      <div class="rd-hm-row">
+        <div class="rd-hm-driver"><span class="rd-num">3</span>Regulatory &amp; Compliance</div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-mod">Moderate</span><span class="rd-pval">Merger IT integration</span></div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-mod">Moderate</span><span class="rd-pval">Unsecured risk-weight hike</span></div>
+        <div class="rd-hm-insight">Both faced entity-specific RBI actions; both resolved — different forward risk types</div>
+      </div>
+      <div class="rd-hm-row">
+        <div class="rd-hm-driver"><span class="rd-num">4</span>Concentration Risk</div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-low">Low</span><span class="rd-pval">Unsecured ~12% of advances</span></div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-mod">Moderate</span><span class="rd-pval">Unsecured ~55% of AUM</span></div>
+        <div class="rd-hm-insight">BAF's intentional consumer concentration delivers higher NIM/ROE at the cost of cycle sensitivity</div>
+      </div>
+      <div class="rd-hm-row">
+        <div class="rd-hm-driver"><span class="rd-num">5</span>Capital Adequacy</div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-low">Low</span><span class="rd-pval">Tier-1 16.3% · ROE 17.1%</span></div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-low">Low</span><span class="rd-pval">Tier-1 21.8% · ROE 24.9%</span></div>
+        <div class="rd-hm-insight">Both well above minimums; BAF's higher Tier-1 reflects NBFC norms + risk-weight headroom</div>
+      </div>
+      <div class="rd-hm-row">
+        <div class="rd-hm-driver"><span class="rd-num">6</span>Macro Sensitivity</div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-low">Low–Mod</span><span class="rd-pval">GNPA range: 0.9–1.4%</span></div>
+        <div class="rd-hm-entity"><span class="rd-pill rd-high">Elevated</span><span class="rd-pval">GNPA range: 0.7–2.96%</span></div>
+        <div class="rd-hm-insight">BAF's unsecured book carries ~2–2.5× GNPA beta vs HDFC Bank through cycles</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text2);margin-top:8px;">* HDFC Bank C/D at 108% is merger-elevated; structural target ~85–90% by FY27.</div>
+  </div>
+
+  <!-- DRIVER CARDS — COMPACT -->
+  <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;">
+
+    <div class="card" style="border-left:4px solid #3fb950;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Asset Quality <span class="rd-pill rd-low" style="font-size:10px;">Low — Both</span></h3>
+      <div class="mrow"><span class="ml">HDFC Bank GNPA (FY24)</span><span class="mv good">1.24%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank Credit Cost</span><span class="mv good">0.42%</span></div>
+      <div class="mrow"><span class="ml">BAF GNPA (FY24)</span><span class="mv good">0.85%</span></div>
+      <div class="mrow"><span class="ml">BAF Credit Cost (AUM)</span><span class="mv warn">~1.6%</span></div>
+      <div class="mrow"><span class="ml">BAF Stage-3 Coverage</span><span class="mv warn">54%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank PCR</span><span class="mv good">74%</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.6;">BAF's low GNPA (0.85%) is partly driven by rapid write-offs on unsecured book — credit cost (1.6%) is the truer risk indicator. HDFC Bank's 0.42% credit cost reflects secured-mortgage dominance post-merger.</div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #d29922;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Funding &amp; Liquidity <span class="rd-pill rd-mod" style="font-size:10px;">Asymmetric</span></h3>
+      <div class="mrow"><span class="ml">HDFC Bank CASA Ratio</span><span class="mv good">~38%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank C/D Ratio*</span><span class="mv warn">108%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank Cost of Funds</span><span class="mv good">~4.9%</span></div>
+      <div class="mrow"><span class="ml">BAF Wholesale Funding %</span><span class="mv warn">~76%</span></div>
+      <div class="mrow"><span class="ml">BAF Cost of Funds</span><span class="mv bad">~7.9%</span></div>
+      <div class="mrow"><span class="ml">BAF Fixed Deposit Book</span><span class="mv">₹60,000+ Cr</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.6;">HDFC Bank's deposit franchise is an enduring moat. BAF mitigates via AAA rating + FD diversification but cannot close the 300 bps cost-of-funds gap structurally. C/D at 108% is temporary (merger); target ~85–90% by FY27.</div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #d29922;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Regulatory <span class="rd-pill rd-mod" style="font-size:10px;">Moderate — Both</span></h3>
+      <div class="mrow"><span class="ml">HDFC Bank — Action</span><span class="mv warn">CC Embargo (FY21)</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank — Status</span><span class="mv good">Resolved Aug 2021</span></div>
+      <div class="mrow"><span class="ml">BAF — Action</span><span class="mv warn">eCOM/EMI Ban (Nov-23)</span></div>
+      <div class="mrow"><span class="ml">BAF — Status</span><span class="mv good">Resolved (KFS fixed)</span></div>
+      <div class="mrow"><span class="ml">BAF — Structural Headwind</span><span class="mv bad">Risk wt: 100→125%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank — Merger Complexity</span><span class="mv warn">IT integration risk</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.6;">Both resolved past actions. Forward risk differs: HDFC Bank faces merger IT complexity; BAF faces structural capital headwinds from RBI's unsecured credit tightening (Nov 2023 risk-weight increase).</div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #d29922;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Concentration <span class="rd-pill rd-mod" style="font-size:10px;">Low / Moderate</span></h3>
+      <div class="mrow"><span class="ml">HDFC Bank Unsecured %</span><span class="mv good">~12%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank Mortgage %</span><span class="mv good">~32%</span></div>
+      <div class="mrow"><span class="ml">BAF Unsecured %</span><span class="mv warn">~55%</span></div>
+      <div class="mrow"><span class="ml">BAF Consumer B2C %</span><span class="mv warn">~70% of AUM</span></div>
+      <div class="mrow"><span class="ml">BAF Rural B2C (new risk)</span><span class="mv bad">FY25 stress visible</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank Top-Segment cap</span><span class="mv good">&lt;35% per segment</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.6;">BAF's concentration is intentional — unsecured consumer delivers higher NIM (~10%) and ROE (~25%). Risk: rural B2C expansion (FY22–24) stretched into less-proven segments, now showing FY25 stress. HDFC Bank diversified further post-merger.</div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #3fb950;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Capital Adequacy <span class="rd-pill rd-low" style="font-size:10px;">Low — Both</span></h3>
+      <div class="mrow"><span class="ml">HDFC Bank Tier-1 (FY24)</span><span class="mv good">16.3%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank Total CAR</span><span class="mv good">18.8%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank ROE (FY24)</span><span class="mv warn">17.1%</span></div>
+      <div class="mrow"><span class="ml">BAF Tier-1 (FY24)</span><span class="mv good">21.8%</span></div>
+      <div class="mrow"><span class="ml">BAF Total CAR</span><span class="mv good">22.7%</span></div>
+      <div class="mrow"><span class="ml">BAF ROE (FY24)</span><span class="mv good">24.9%</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.6;">Both well above minimums (10.5% bank; 15% NBFC). HDFC Bank ROE compressed (NIM drag from merger). BAF's risk-weight hike absorbs ~200 bps Tier-1 — buffer remains ample. No equity dilution needed near-term.</div>
+    </div>
+
+    <div class="card" style="border-left:4px solid #f97316;">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Macro Sensitivity <span class="rd-pill rd-high" style="font-size:10px;">Asymmetric</span></h3>
+      <div class="mrow"><span class="ml">HDFC Bank GNPA range (10yr)</span><span class="mv good">0.9% – 1.4%</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank GNPA Beta</span><span class="mv good">~0.5× cycle</span></div>
+      <div class="mrow"><span class="ml">HDFC Bank Book Type</span><span class="mv good">Secured-heavy</span></div>
+      <div class="mrow"><span class="ml">BAF GNPA range (10yr)</span><span class="mv warn">0.7% – 2.96%</span></div>
+      <div class="mrow"><span class="ml">BAF GNPA Beta</span><span class="mv bad">~2–2.5× cycle</span></div>
+      <div class="mrow"><span class="ml">BAF Book Type</span><span class="mv bad">Unsecured-heavy</span></div>
+      <div style="font-size:11px;color:var(--text2);margin-top:10px;line-height:1.6;">Most fundamental differentiator. BAF's GNPA is 4× more volatile through cycles. COVID confirmed it: BAF fell 53% (vs HDFC Bank 37%) and GNPA went 1.6%→2.96%. Investors in BAF take an India consumption cycle view — higher risk, higher reward.</div>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- ===== DATA NOTES ===== -->
+<section id="notes" class="section">
+  <div class="sec-title">Data Notes &amp; Methodology</div>
+  <div class="sec-sub">How data breaks, definitional changes, and comparability issues were handled.</div>
+
+  <div class="two-col">
+    <div class="card card-h">
+      <h3 style="color:var(--hdfc-light);">HDFC Bank — Data Breaks</h3>
+
+      <div class="pq" style="margin-bottom:14px;">
+        <strong>Merger Break (July 1, 2023):</strong> HDFC Ltd merged into HDFC Bank. Q1 FY24 onwards, the bank absorbed HDFC Ltd's ₹7+ lakh crore mortgage book.<br>
+        Impacts: (1) Advances +54.4% FY24 vs FY23 (organic ~15%); (2) C/D ratio: 88x → 108x; (3) GNPA: 1.12% → 1.24% — partly from HDFC Ltd's housing loan NPA ageing norms; (4) NIM: ~4.3% → ~3.4%.<br><br>
+        <strong>Handling:</strong> FY24 data marked ⚑ in all charts. FY23→FY24 GNPA increase treated as partly structural/composition-driven, not pure credit deterioration. Pre/post-merger comparisons explicitly flagged.
+      </div>
+
+      <div class="mrow"><span class="ml">FY24 GNPA (1.24%), NNPA (0.33%)</span><span class="mv good">Direct — HDFC Bank FY24 MD&A</span></div>
+      <div class="mrow"><span class="ml">FY24 PCR (74%)</span><span class="mv good">Direct — HDFC Bank FY24 MD&A</span></div>
+      <div class="mrow"><span class="ml">FY24 Credit Cost (0.42%)</span><span class="mv good">Direct — Q4FY24 press release (Q4 annualised)</span></div>
+      <div class="mrow"><span class="ml">FY23 GNPA (1.12%), NNPA (0.3%)</span><span class="mv good">Direct — Equitymaster FY23 analysis</span></div>
+      <div class="mrow"><span class="ml">FY22 GNPA (1.17%)</span><span class="mv good">Direct — HDFC Bank FY22 annual press release</span></div>
+      <div class="mrow"><span class="ml">FY22 Q4 Slippage (~1.3% ann.)</span><span class="mv good">Direct — HDFC Bank Q4FY22 press release</span></div>
+      <div class="mrow"><span class="ml">FY25 Write-offs (₹11,846 cr)</span><span class="mv good">Direct — RBI Performance Statistics via Dataful.in</span></div>
+      <div class="mrow"><span class="ml">FY15–FY21 GNPA/NNPA</span><span class="mv warn">HDFC Bank annual reports + Equitymaster/Business Standard historical analysis</span></div>
+    </div>
+
+    <div class="card card-b">
+      <h3 style="color:var(--bajaj-light);">Bajaj Finance — Data Breaks</h3>
+
+      <div class="pq" style="margin-bottom:14px;">
+        <strong>Name &amp; Model Change (2010):</strong> Bajaj Auto Finance Ltd became Bajaj Finance Ltd, simultaneously pivoting from 2-wheeler finance to diversified consumer lending. Pre-2010 data not comparable.<br><br>
+        <strong>Within-window data break — Overdue Norm Migration (FY16–FY18):</strong> BAF&#39;s NPA recognition threshold was progressively tightened from 5 months overdue (FY16) → 4 months (FY17) → 3 months (FY18), aligning with RBI&#39;s 90-DPD standard. BAF itself cautions that GNPA figures across FY16–FY18 are not comparable on a like-for-like basis. The tightening mechanically inflated reported GNPA during this window even without genuine credit deterioration. ⚑ Charts mark this period with a caveat; the FY16 starting GNPA of 0.7% is likely understated relative to the 3-month norm applied from FY18 onward.<br><br>
+        <strong>Handling:</strong> Analysis begins FY2016 — well past the 2010 pivot. The overdue norm migration is disclosed in the chart footnote and Data Notes. The FY16–FY18 trend should be read with caution; the FY19–FY24 series (3-month norm throughout) is fully comparable.
+      </div>
+
+      <div class="pq" style="margin-bottom:14px;">
+        <strong>PCR Disclosure:</strong> BAF (as NBFC under IndAS/ECL framework) operates under IndAS / ECL provisioning rather than RBI&#39;s incurred-loss model, so PCR is not reported in the standard bank format. <em>However, BAF does separately disclose Stage-3 provision coverage in its quarterly earnings presentations and investor presentations</em> — this is the closest NBFC equivalent to bank PCR.<br>
+        <strong>Handling:</strong> We use the proxy PCR ≈ 1 − (NNPA/GNPA). FY24: ≈ 1 − (0.37/0.85) ≈ 56.5%. BAF&#39;s reported Stage-3 coverage ratio (from earnings releases) is typically higher, as it reflects ECL lifetime provisions rather than incurred-loss specific provisions. Both metrics indicate adequate provisioning; the proxy is used here for cross-entity comparability. The comparison to bank PCR (74% for HDFC Bank) is not apples-to-apples and is so noted throughout.
+      </div>
+
+      <div class="mrow"><span class="ml">FY24 GNPA (0.85%), NNPA (0.37%)</span><span class="mv good">Direct — Q4 FY24 Earnings Call transcript</span></div>
+      <div class="mrow"><span class="ml">FY23 Credit Cost (1.3%)</span><span class="mv good">Direct — CRISIL Rating Report, Nov 2023</span></div>
+      <div class="mrow"><span class="ml">FY22 Credit Cost (2.4%)</span><span class="mv good">Direct — CRISIL Rating Report, Nov 2023</span></div>
+      <div class="mrow"><span class="ml">FY13–FY19 avg CC (~1.5%)</span><span class="mv good">Direct — BOBCAPS Research, Sep 2023</span></div>
+      <div class="mrow"><span class="ml">FY25 Q1 Gross Loan Loss (2.12%)</span><span class="mv good">Direct — Q1 FY25 Earnings Call transcript</span></div>
+      <div class="mrow"><span class="ml">FY16 NNPA (0.28%)</span><span class="mv good">Direct — Quartr Q4 FY16 earnings summary</span></div>
+      <div class="mrow"><span class="ml">NBFC Sector GNPA</span><span class="mv warn">RBI FSR &amp; RBI Banking Supervision Reports. FY24 (Mar-24) = 4.0% per RBI FSR Jun-24. Note: CARE Ratings Q2 FY25 (Sep-24) figure of 3.4% is a later data point and was not used for FY24.</span></div>
+    </div>
+  </div>
+
+  <!-- Methodology definitions -->
+  <div class="card">
+    <h3>Metric Definitions Applied</h3>
+    <div class="mrow"><span class="ml">GNPA</span><span class="mv" style="max-width:70%;text-align:right;font-size:11px;">Loans 90+ DPD (days past due) per RBI guidelines. Excludes moratorium-masked accounts during Mar–Aug 2020 for bank disclosures.</span></div>
+    <div class="mrow"><span class="ml">NNPA</span><span class="mv" style="max-width:70%;text-align:right;font-size:11px;">GNPA less specific provisions held against those accounts. Net of provisioning buffer.</span></div>
+    <div class="mrow"><span class="ml">PCR (Banks)</span><span class="mv" style="max-width:70%;text-align:right;font-size:11px;">Specific provisions / Gross NPA. HDFC Bank FY24 PCR of 74% is on specific provisions only; including floating/contingent = 195% (inflated by extraordinary floating provisions). We use 74% (specific only) throughout for conservative comparability.</span></div>
+    <div class="mrow"><span class="ml">Credit Cost</span><span class="mv" style="max-width:70%;text-align:right;font-size:11px;">Annualised provisions &amp; contingencies / average net advances (banks) or average AUM (BAF). Not directly comparable between bank and NBFC.</span></div>
+    <div class="mrow"><span class="ml">Slippage Ratio</span><span class="mv" style="max-width:70%;text-align:right;font-size:11px;">Fresh NPA additions in the year / opening gross advances. BAF equivalent: gross loan loss to average AUM.</span></div>
+    <div class="mrow"><span class="ml">Write-offs</span><span class="mv" style="max-width:70%;text-align:right;font-size:11px;">Loans written off reduce GNPA stock but represent fully-provisioned realised losses. Recovery of written-off loans is upside, booked in "other income."</span></div>
+  </div>
+
+  <!-- Sources -->
+  <div class="card">
+    <h3>Primary Sources</h3>
+    <div style="font-size:11.5px;color:var(--text2);line-height:2;">
+      <div>1. HDFC Bank Annual Reports FY2015–FY2024 (HDFC Bank Investor Relations)</div>
+      <div>2. HDFC Bank Quarterly Press Releases / Q4FY24 Earnings Press Release (direct figures)</div>
+      <div>3. HDFC Bank FY24 Management Discussion &amp; Analysis (direct figures: GNPA 1.24%, NNPA 0.33%, PCR 74%, credit cost 0.42%)</div>
+      <div>4. Bajaj Finance Quarterly Earnings Call Transcripts — Q4 FY24, Q1 FY25, Q4 FY26 (direct figures)</div>
+      <div>5. Bajaj Finance Annual Reports FY2016–FY2024</div>
+      <div>6. CRISIL Rating Report — Bajaj Finance, November 2023 (CC: FY23 1.3%, FY22 2.4%)</div>
+      <div>7. BOBCAPS (Bank of Baroda Capital Markets) Research — Bajaj Finance Initiating Coverage, September 2023 (avg CC FY13–FY19 ~1.5%)</div>
+      <div>8. CARE Ratings — Asset Quality Analysis Q2FY25 (NBFC sector GNPA 3.4% confirmed)</div>
+      <div>9. RBI Report on Operations &amp; Performance of Commercial Banks, FY2023-24</div>
+      <div>10. RBI Financial Stability Reports (various years)</div>
+      <div>11. Equitymaster HDFC Bank / ICICI Bank Annual Report Analyses (FY22, FY23, FY24)</div>
+      <div>12. Dataful.in — RBI Year-wise Performance Statistics for HDFC Bank (FY25 write-offs)</div>
+      <div>13. Quartr — Bajaj Finance Q4 FY16 Earnings Summary (FY16 NNPA 0.28%)</div>
+      <div>14. Business Standard — contemporaneous reporting on HDFC Bank NPA milestones</div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /main -->
+
+<script>
+// Tab navigation
+function show(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Chart.js defaults
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#30363d';
+Chart.defaults.font.family = "Inter, -apple-system, sans-serif";
+Chart.defaults.font.size = 11;
+
+// ── CUSTOM EVENT-LINE PLUGIN ─────────────────────────────────────────────────
+// White dotted vertical lines + staggered rotated labels inside each chart.
+Chart.register({
+  id: 'vEventLines',
+  afterDraw(chart) {
+    const cfg = chart.config.options.plugins.vEventLines;
+    if (!cfg || !cfg.lines || !cfg.lines.length) return;
+    const { ctx } = chart;
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+    if (!xScale || !yScale) return;
+    const yTop = yScale.top;
+    const yBot = yScale.bottom;
+
+    cfg.lines.forEach((line) => {
+      const idx = chart.data.labels.indexOf(line.year);
+      if (idx === -1) return;
+      const x = xScale.getPixelForValue(idx);
+
+      // White dotted line — full chart height
+      ctx.save();
+      ctx.beginPath();
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.moveTo(x, yTop);
+      ctx.lineTo(x, yBot);
+      ctx.stroke();
+      ctx.restore();
+
+      // Label ABOVE the chart data area (in the top padding zone)
+      // rotate(-90°): +x direction = UP on screen, so textAlign=left draws upward
+      ctx.save();
+      ctx.font = '600 8.5px Inter,-apple-system,sans-serif';
+      const tw = ctx.measureText(line.text).width + 6;
+      // pill background
+      ctx.translate(x, yTop - 4);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = 'rgba(22,27,34,0.82)';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(0, -9, tw, 11, 2);
+      else { ctx.rect(0, -9, tw, 11); }
+      ctx.fill();
+      // text
+      ctx.fillStyle = 'rgba(255,255,255,0.90)';
+      ctx.textAlign = 'left';
+      ctx.fillText(line.text, 3, 0);
+      ctx.restore();
+    });
+  }
+});
+
+// Event-line definitions — abbreviated to fit the bottom strip without overlap
+const hdfcLines = { lines: [
+  { year: 'FY19', text: 'IL&FS'      },
+  { year: 'FY20', text: 'COVID'      },
+  { year: 'FY21', text: 'CC Ban'     },
+  { year: 'FY24', text: 'Merger'     },
+]};
+
+const bajajLines = { lines: [
+  { year: 'FY17', text: 'Split'      },
+  { year: 'FY19', text: 'IL&FS'      },
+  { year: 'FY20', text: 'COVID'      },
+  { year: 'FY21', text: 'Restruc.'   },
+  { year: 'FY24', text: 'RBI Ban'    },
+]};
+
+const spLines = { lines: [
+  { year: 'FY17', text: 'Split'      },
+  { year: 'FY19', text: 'IL&FS'      },
+  { year: 'FY20', text: 'COVID'      },
+  { year: 'FY21', text: 'Recovery'   },
+  { year: 'FY24', text: 'Merger/RBI' },
+]};
+
+const hC = '#3b82f6', bC = '#f59e0b', iC = '#ef4444', aC = '#22c55e', kC = '#a855f7', nC = '#94a3b8';
+const years10 = ['FY15','FY16','FY17','FY18','FY19','FY20','FY21','FY22','FY23','FY24'];
+const years9  = ['FY16','FY17','FY18','FY19','FY20','FY21','FY22','FY23','FY24'];
+
+// --- HDFC GNPA vs Peers ---
+const hdfcGNPA  = [0.9, 0.9, 1.1, 1.3, 1.4, 1.3, 1.3, 1.17, 1.12, 1.24];
+const iciciBGNPA= [3.29,5.21,7.9, 8.84,6.7, 5.5, 4.96,3.6,  2.9,  2.16];
+const axisBGNPA = [1.4, 1.7, 5.0, 6.77,5.26,4.86,3.7, 2.82, 1.8,  1.5 ];
+const kotakGNPA = [2.1, 2.4, 2.6, 2.3, 2.2, 2.3, 3.3, 2.3,  1.7,  1.4 ];
+
+new Chart(document.getElementById('hdfcGNPA'), {
+  type: 'line',
+  data: {
+    labels: years10,
+    datasets: [
+      { label: 'HDFC Bank', data: hdfcGNPA, borderColor: hC, backgroundColor: 'rgba(59,130,246,.08)', borderWidth: 2.5, pointRadius: 4, tension: .3, fill: false },
+      { label: 'ICICI Bank', data: iciciBGNPA, borderColor: iC, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: .3, borderDash: [4,2], fill: false },
+      { label: 'Axis Bank', data: axisBGNPA, borderColor: aC, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: .3, borderDash: [4,2], fill: false },
+      { label: 'Kotak Mahindra', data: kotakGNPA, borderColor: kC, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: .3, borderDash: [4,2], fill: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 28 } },
+    plugins: { legend: { position: 'left', labels: { boxWidth: 8, usePointStyle: true, font: { size: 9 }, padding: 6 } }, tooltip: { mode: 'index', intersect: false }, vEventLines: hdfcLines },
+    scales: { y: { title: { display: true, text: 'GNPA Ratio (%)' }, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// --- HDFC NNPA ---
+const hdfcNNPA = [0.2, 0.2, 0.3, 0.4, 0.4, 0.4, 0.4, 0.3, 0.27, 0.33];
+new Chart(document.getElementById('hdfcNNPA'), {
+  type: 'bar',
+  data: {
+    labels: years10,
+    datasets: [{ label: 'NNPA Ratio (%)', data: hdfcNNPA, backgroundColor: 'rgba(59,130,246,.55)', borderColor: hC, borderWidth: 1, borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 28 } },
+    plugins: { legend: { display: false }, vEventLines: hdfcLines },
+    scales: { y: { max: 0.6, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// --- HDFC PCR ---
+const hdfcPCR = [68, 68, 70, 69, 71, 72, 69.8, 73, 76, 74];
+new Chart(document.getElementById('hdfcPCR'), {
+  type: 'line',
+  data: {
+    labels: years10,
+    datasets: [{ label: 'PCR — Specific (%)', data: hdfcPCR, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.08)', borderWidth: 2, pointRadius: 4, tension: .3, fill: true }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 28 } },
+    plugins: { legend: { display: false }, vEventLines: hdfcLines },
+    scales: { y: { min: 60, max: 80, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// --- HDFC Credit Cost ---
+const hdfcCC = [0.6, 0.6, 0.7, 0.8, 0.8, 0.9, 1.0, 0.8, 0.67, 0.42];
+new Chart(document.getElementById('hdfcCC'), {
+  type: 'line',
+  data: {
+    labels: years10,
+    datasets: [{ label: 'Credit Cost (%)', data: hdfcCC, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.08)', borderWidth: 2, pointRadius: 4, tension: .3, fill: true }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 28 } },
+    plugins: { legend: { display: false }, vEventLines: hdfcLines },
+    scales: { y: { min: 0, max: 1.4, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// --- BAF GNPA vs NBFC ---
+const bajajGNPA  = [0.7, 1.6, 1.5, 1.4, 1.4, 1.79, 1.60, 0.94,0.85]; // FY21=Mar-21; Q1FY22 peak was 2.96%
+const nbfcSector = [5.5, 5.8, 6.0, 6.1, 6.4, 7.0,  6.0,  4.6, 4.0 ]; // FY24=RBI Mar-24 figure
+new Chart(document.getElementById('bajajGNPA'), {
+  type: 'line',
+  data: {
+    labels: years9,
+    datasets: [
+      { label: 'Bajaj Finance', data: bajajGNPA, borderColor: bC, backgroundColor: 'rgba(245,158,11,.08)', borderWidth: 2.5, pointRadius: 4, tension: .3, fill: false },
+      { label: 'NBFC Sector Avg', data: nbfcSector, borderColor: nC, backgroundColor: 'transparent', borderWidth: 1.5, pointRadius: 3, tension: .3, borderDash: [5,3], fill: false }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 28 } },
+    plugins: { legend: { position: 'left', labels: { boxWidth: 8, usePointStyle: true, font: { size: 9 }, padding: 6 } }, tooltip: { mode: 'index', intersect: false }, vEventLines: bajajLines },
+    scales: { y: { title: { display: true, text: 'GNPA Ratio (%)' }, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// --- BAF NNPA ---
+const bajajNNPA = [0.3, 0.5, 0.5, 0.5, 0.5, 1.0, 0.68,0.34,0.37];
+new Chart(document.getElementById('bajajNNPA'), {
+  type: 'bar',
+  data: {
+    labels: years9,
+    datasets: [{ label: 'NNPA Ratio (%)', data: bajajNNPA, backgroundColor: 'rgba(245,158,11,.55)', borderColor: bC, borderWidth: 1, borderRadius: 4 }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 28 } },
+    plugins: { legend: { display: false }, vEventLines: bajajLines },
+    scales: { y: { ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// --- BAF Credit Cost ---
+const bajajCC = [1.5, 1.5, 1.5, 1.5, 1.6, 3.0, 2.4, 1.3, 1.6];
+new Chart(document.getElementById('bajajCC'), {
+  type: 'line',
+  data: {
+    labels: years9,
+    datasets: [{ label: 'Credit Cost (%)', data: bajajCC, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.08)', borderWidth: 2, pointRadius: 4, tension: .3, fill: true }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    layout: { padding: { top: 28 } },
+    plugins: { legend: { display: false }, vEventLines: bajajLines },
+    scales: { y: { min: 0, max: 3.6, ticks: { callback: v => v + '%' } } }
+  }
+});
+
+// ======================================================
+// SHARE PRICE LINE CHART
+// ======================================================
+// Indexed performance: Base 100 at each entity's start year
+// HDFC Bank base = FY15 ₹511 (bonus-adj); BAF base = FY16 ₹69 (÷10 for Sept-2016 1:5 split + 1:1 bonus)
+// Index = (absolute price / base price) × 100
+const hdfcSharePrices = [100, 105, 141, 185, 227, 168, 292, 288, 315, 283]; // FY15-FY24
+const bajajSharePrices = [null, 100, 341, 514, 875, 642, 1490, 2104, 1628, 2097]; // FY16-FY24
+
+// Highlight event years with larger points
+// FY19 (index 4) = IL&FS; FY20 (index 5) = COVID; FY24 (index 9) = merger/rural-B2C
+const hdfcPtR  = [4,4,4,4,7,7,4,4,4,7];
+const bajajPtR = [0,4,4,4,7,7,4,4,4,7]; // FY16 & FY17 now have points
+const hdfcPtC  = hdfcSharePrices.map((_,i) => [4,5,9].includes(i) ? '#f85149' : '#3b82f6');
+const bajajPtC = bajajSharePrices.map((_,i) => [4,5,9].includes(i) ? '#f85149' : '#f59e0b');
+
+new Chart(document.getElementById('sharePriceChart'), {
+  type: 'line',
+  data: {
+    labels: years10,
+    datasets: [
+      {
+        label: 'HDFC Bank (Index, base FY15=100)',
+        data: hdfcSharePrices,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,.07)',
+        borderWidth: 2.5,
+        pointRadius: hdfcPtR,
+        pointBackgroundColor: hdfcPtC,
+        tension: 0.3,
+        fill: false,
+        spanGaps: true
+      },
+      {
+        label: 'Bajaj Finance (Index, base FY16=100)',
+        data: bajajSharePrices,
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245,158,11,.07)',
+        borderWidth: 2.5,
+        pointRadius: bajajPtR,
+        pointBackgroundColor: bajajPtC,
+        tension: 0.3,
+        fill: false,
+        spanGaps: false
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    layout: { padding: { top: 28 } },
+    plugins: {
+      legend: {
+        position: 'left',
+        labels: { boxWidth: 8, usePointStyle: true, color: '#c9d1d9', font: { size: 9 }, padding: 6 }
+      },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.raw == null ? null : `${ctx.dataset.label}: ${ctx.raw.toLocaleString('en-IN')} (index)`
+        }
+      },
+      vEventLines: spLines
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(48,54,61,.8)' },
+        ticks: { color: '#8b949e', font: { size: 11 } }
+      },
+      y: {
+        title: { display: true, text: 'Performance Index (Base 100)', color: '#8b949e', font: { size: 11 } },
+        ticks: { color: '#8b949e', font: { size: 11 }, callback: v => v },
+        min: 0
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
